@@ -105,7 +105,7 @@ spec:
                 name: spring-app
                 port:
                   name: http
-            path: /orders/*
+            path: /orders/api/orders
             pathType: Prefix
 ---
 apiVersion: v1
