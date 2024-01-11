@@ -1,0 +1,130 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    app.dekorate.io/vcs-url: <<unknown>>
+    app.dekorate.io/commit-id: efaacc259c2348e5fe22b387c66c98b05b73caa2
+  labels:
+    app.kubernetes.io/name: spring-app
+    app.kubernetes.io/version: 1.0.0
+  name: spring-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/version: 1.0.0
+      app.kubernetes.io/name: spring-app
+  template:
+    metadata:
+      annotations:
+        app.dekorate.io/vcs-url: <<unknown>>
+        app.dekorate.io/commit-id: efaacc259c2348e5fe22b387c66c98b05b73caa2
+      labels:
+        app.kubernetes.io/version: 1.0.0
+        app.kubernetes.io/name: spring-app
+    spec:
+      containers:
+        - env:
+            - name: KUBERNETES_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: SPRING_PROFILES_ACTIVE
+              valueFrom:
+                configMapKeyRef:
+                  key: ACTIVE_PROFILE
+                  name: cluster-config
+            - name: VAULT_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  key: VAULT_ENABLED
+                  name: cluster-config
+            - name: VAULT_BACKEND
+              valueFrom:
+                configMapKeyRef:
+                  key: VAULT_BACKEND
+                  name: cluster-config
+            - name: VAULT_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: VAULT_URL
+                  name: cluster-config
+            - name: VAULT_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: VAULT_KEY
+                  name: vault-springboot-secrate
+          image: ghcr.io/nikhil12894/spring-app
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /orders/actuator/health/liveness
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 10
+          name: spring-app
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /orders/actuator/health/readiness
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 10
+      imagePullSecrets:
+        - name: dockerconfigjson-github-com
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    app.dekorate.io/vcs-url: <<unknown>>
+    app.dekorate.io/commit-id: efaacc259c2348e5fe22b387c66c98b05b73caa2
+  labels:
+    app.kubernetes.io/name: spring-app
+    app.kubernetes.io/version: 1.0.0
+  name: spring-app
+spec:
+  rules:
+    - host: ""
+      http:
+        paths:
+          - backend:
+              service:
+                name: spring-app
+                port:
+                  name: http
+            path: /orders/*
+            pathType: Prefix
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    app.dekorate.io/vcs-url: <<unknown>>
+    app.dekorate.io/commit-id: efaacc259c2348e5fe22b387c66c98b05b73caa2
+  labels:
+    app.kubernetes.io/name: spring-app
+    app.kubernetes.io/version: 1.0.0
+  name: spring-app
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app.kubernetes.io/name: spring-app
+    app.kubernetes.io/version: 1.0.0
+  type: ClusterIP
